@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<p:FatturaElettronica versione="FPR12" xmlns:p="http://ivaservizi.agenziaentrate.gov.it/docs/xsd/facture/v1.2">
+  <FatturaElettronicaHeader>
+    <CedentePrestatore>
+      <DatiAnagrafici>
+        <IdFiscaleIVA>
+          <IdPaese>IT</IdPaese>
+          <IdCodice>09876543210</IdCodice>
+        </IdFiscaleIVA>
+        <Anagrafica>
+          <Denominazione>Utensileria Varesina S.r.l.</Denominazione>
+        </Anagrafica>
+      </DatiAnagrafici>
+    </CedentePrestatore>
+  </FatturaElettronicaHeader>
+  <FatturaElettronicaBody>
+    <DatiGenerali>
+      <DatiGeneraliDocumento>
+        <TipoDocumento>TD01</TipoDocumento>
+        <Numero>2026/001</Numero>
+        <Data>2026-09-15</Data>
+        <ImportoTotaleDocumento>1220.00</ImportoTotaleDocumento>
+      </DatiGeneraliDocumento>
+    </DatiGenerali>
+    <DatiBeniServizi>
+      <DatiRiepilogo>
+        <ImponibileImporto>1000.00</ImponibileImporto>
+        <Imposta>220.00</Imposta>
+      </DatiRiepilogo>
+    </DatiBeniServizi>
+    <DatiPagamento>
+      <DettaglioPagamento>
+        <ModalitaPagamento>bonifico</ModalitaPagamento>
+        <DataScadenzaPagamento>2026-10-31</DataScadenzaPagamento>
+        <ImportoPagamento>1220.00</ImportoPagamento>
+      </DettaglioPagamento>
+    </DatiPagamento>
+  </FatturaElettronicaBody>
+</p:FatturaElettronica>

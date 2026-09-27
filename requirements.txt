@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pydantic
+email-validator
+psycopg2-binary
+python-dotenv
+cryptography
+defusedxml
+passlib[bcrypt]
+bcrypt==4.0.1
+PyJWT
+slowapi
+python-multipart

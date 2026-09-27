@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # 1. Servizio Database PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: smart_treasury_db_container
+    restart: always
+    environment:
+      POSTGRES_DB: smart_treasury_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password_super_sicura
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. Servizio Backend FastAPI
+  web:
+    build: .
+    container_name: smart_treasury_api_container
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db  # Nel network Docker, l'host del DB si chiama 'db' e non 'localhost'
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

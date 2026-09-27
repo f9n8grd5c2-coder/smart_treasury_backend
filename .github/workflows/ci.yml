@@ -1,0 +1,36 @@
+name: Smart Treasury CI (Continuous Integration)
+
+# Scatena il workflow ad ogni push o Pull Request sui rami main o master
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test-and-verify:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Scarica il codice sorgente dal repository GitHub
+    - name: Checkout del codice
+      uses: actions/checkout@v4
+
+    # 2. Configura l'ambiente Python 3.11 nella macchina virtuale Linux
+    - name: Configurazione Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+
+    # 3. Installa le dipendenze di progetto e quelle di test
+    - name: Installazione dipendenze
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest httpx
+
+    # 4. Esegue la suite di test automatici con Pytest
+    - name: Esecuzione Test Automatici con Pytest
+      run: |
+        pytest -v
