@@ -41,7 +41,7 @@ jobs:
         pip install -r requirements.txt
         pip install pytest httpx psycopg2-binary
 
-    - name: Creazione file .env completo per ambiente CI
+    - name: Creazione file .env per ambiente CI
       run: |
         echo "JWT_SECRET_KEY=chiave_segreta_di_test_per_ci_cd_123456789" > .env
         echo "AZIENDA_ID=az_001_ferramenta" >> .env
@@ -63,4 +63,4 @@ jobs:
 
     - name: Esecuzione Test Automatici con Pytest
       run: |
-        pytest -v
+        pytest -v -s --tb=short
