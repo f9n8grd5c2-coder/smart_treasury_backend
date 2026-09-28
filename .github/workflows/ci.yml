@@ -10,7 +10,6 @@ jobs:
   test-and-verify:
     runs-on: ubuntu-latest
 
-    # Servizio PostgreSQL containerizzato isolato per la pipeline CI
     services:
       postgres:
         image: postgres:15-alpine
@@ -22,42 +21,46 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd pg_isready
-          --health-interval 10s
+          --health-interval 5s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
 
     steps:
-    # 1. Scarica il codice dal repository GitHub
     - name: Checkout del codice
       uses: actions/checkout@v4
 
-    # 2. Configura l'ambiente Python 3.11
     - name: Configurazione Python 3.11
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
         cache: 'pip'
 
-    # 3. Installa le dipendenze del progetto e gli strumenti di test
-    - name: Installazione dipendenze
+    - name: Installazione dipendenze e driver database
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest httpx
+        pip install pytest httpx psycopg2-binary
 
-    # 4. Genera il file .env temporaneo per l'ambiente di test CI
-    - name: Creazione file .env per ambiente CI
+    - name: Creazione file .env completo per ambiente CI
       run: |
         echo "JWT_SECRET_KEY=chiave_segreta_di_test_per_ci_cd_123456789" > .env
         echo "AZIENDA_ID=az_001_ferramenta" >> .env
-        echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/smart_treasury" >> .env
+        echo "DB_HOST=127.0.0.1" >> .env
+        echo "POSTGRES_HOST=127.0.0.1" >> .env
+        echo "DB_PORT=5432" >> .env
+        echo "POSTGRES_PORT=5432" >> .env
+        echo "DB_USER=postgres" >> .env
+        echo "POSTGRES_USER=postgres" >> .env
+        echo "DB_PASSWORD=postgres" >> .env
+        echo "POSTGRES_PASSWORD=postgres" >> .env
+        echo "DB_NAME=smart_treasury" >> .env
+        echo "POSTGRES_DB=smart_treasury" >> .env
+        echo "DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/smart_treasury" >> .env
 
-    # 5. Popola il database PostgreSQL pulito con l'utente di test
     - name: Inizializzazione Database e Utente di Test
       run: |
         python crea_utente_test.py
 
-    # 6. Esegue la suite di test automatici con Pytest
     - name: Esecuzione Test Automatici con Pytest
       run: |
         pytest -v
