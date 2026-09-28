@@ -27,7 +27,7 @@ def inizializza_db_e_utente():
             );
         """)
 
-        # 2. Tabella audit_logs completa con tutte le colonne
+        # 2. Tabella audit_logs
         cur.execute("""
             CREATE TABLE IF NOT EXISTS audit_logs (
                 id SERIAL PRIMARY KEY,
@@ -42,27 +42,38 @@ def inizializza_db_e_utente():
             );
         """)
 
-        # Aggiunta colonne di sicurezza nel caso la tabella esistesse già parzialmente
+        # 3. Tabella conti_correnti per l'endpoint /conti/saldo
         cur.execute("""
-            ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS indirizzo_ip VARCHAR(50);
-            ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS user_agent TEXT;
+            CREATE TABLE IF NOT EXISTS conti_correnti (
+                id SERIAL PRIMARY KEY,
+                azienda_id VARCHAR(50) NOT NULL,
+                nome_banca VARCHAR(100) NOT NULL,
+                iban VARCHAR(34) NOT NULL,
+                saldo_contabile NUMERIC(15, 2) DEFAULT 0.00,
+                saldo_disponibile NUMERIC(15, 2) DEFAULT 0.00,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         """)
 
-        # 3. Inserimento utente di test
+        # 4. Inserimento utente di test
         cur.execute("SELECT id FROM utenti WHERE email = %s;", (EMAIL_TEST,))
-        utente_esistente = cur.fetchone()
-
-        if not utente_esistente:
+        if not cur.fetchone():
             hashed_password = pwd_context.hash(PASSWORD_TEST)
             cur.execute("""
                 INSERT INTO utenti (azienda_id, email, password_hash, ruolo)
                 VALUES (%s, %s, %s, 'admin');
             """, (AZIENDA_ID, EMAIL_TEST, hashed_password))
-            conn.commit()
-            print(f"✅ Utente {EMAIL_TEST} e tabelle audit creati con successo!")
-        else:
-            conn.commit()
-            print(f"ℹ️ Utente {EMAIL_TEST} e schema già pronti.")
+
+        # 5. Inserimento conto di prova (se non presente)
+        cur.execute("SELECT id FROM conti_correnti WHERE azienda_id = %s;", (AZIENDA_ID,))
+        if not cur.fetchone():
+            cur.execute("""
+                INSERT INTO conti_correnti (azienda_id, nome_banca, iban, saldo_contabile, saldo_disponibile)
+                VALUES (%s, 'Banca Intesa Test', 'IT60X0542811101000000123456', 15000.00, 15000.00);
+            """, (AZIENDA_ID,))
+
+        conn.commit()
+        print("✅ Schema DB, utente di test e conto corrente inizializzati con successo!")
 
     except Exception as e:
         conn.rollback()
