@@ -15,7 +15,7 @@ def inizializza_db_e_utente():
     cur = conn.cursor()
 
     try:
-        # 1. Crea la tabella utenti se non esiste
+        # 1. Tabella utenti
         cur.execute("""
             CREATE TABLE IF NOT EXISTS utenti (
                 id SERIAL PRIMARY KEY,
@@ -27,7 +27,7 @@ def inizializza_db_e_utente():
             );
         """)
 
-        # 2. Crea la tabella audit_logs per il tracciamento della sicurezza
+        # 2. Tabella audit_logs completa con tutte le colonne
         cur.execute("""
             CREATE TABLE IF NOT EXISTS audit_logs (
                 id SERIAL PRIMARY KEY,
@@ -36,11 +36,19 @@ def inizializza_db_e_utente():
                 azione VARCHAR(255),
                 dettagli TEXT,
                 utente_email VARCHAR(255),
+                indirizzo_ip VARCHAR(50),
+                user_agent TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
 
-        # 3. Verifica se l'utente esiste già
+        # Aggiunta colonne di sicurezza nel caso la tabella esistesse già parzialmente
+        cur.execute("""
+            ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS indirizzo_ip VARCHAR(50);
+            ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS user_agent TEXT;
+        """)
+
+        # 3. Inserimento utente di test
         cur.execute("SELECT id FROM utenti WHERE email = %s;", (EMAIL_TEST,))
         utente_esistente = cur.fetchone()
 
@@ -51,9 +59,10 @@ def inizializza_db_e_utente():
                 VALUES (%s, %s, %s, 'admin');
             """, (AZIENDA_ID, EMAIL_TEST, hashed_password))
             conn.commit()
-            print(f"✅ Utente {EMAIL_TEST} e tabelle creati con successo!")
+            print(f"✅ Utente {EMAIL_TEST} e tabelle audit creati con successo!")
         else:
-            print(f"ℹ️ Utente {EMAIL_TEST} già presente nel database.")
+            conn.commit()
+            print(f"ℹ️ Utente {EMAIL_TEST} e schema già pronti.")
 
     except Exception as e:
         conn.rollback()
