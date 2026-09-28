@@ -27,7 +27,20 @@ def inizializza_db_e_utente():
             );
         """)
 
-        # 2. Verifica se l'utente esiste già
+        # 2. Crea la tabella audit_logs per il tracciamento della sicurezza
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id SERIAL PRIMARY KEY,
+                azienda_id VARCHAR(50),
+                livello VARCHAR(20),
+                azione VARCHAR(255),
+                dettagli TEXT,
+                utente_email VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        # 3. Verifica se l'utente esiste già
         cur.execute("SELECT id FROM utenti WHERE email = %s;", (EMAIL_TEST,))
         utente_esistente = cur.fetchone()
 
@@ -38,7 +51,7 @@ def inizializza_db_e_utente():
                 VALUES (%s, %s, %s, 'admin');
             """, (AZIENDA_ID, EMAIL_TEST, hashed_password))
             conn.commit()
-            print(f"✅ Utente {EMAIL_TEST} creato con successo!")
+            print(f"✅ Utente {EMAIL_TEST} e tabelle creati con successo!")
         else:
             print(f"ℹ️ Utente {EMAIL_TEST} già presente nel database.")
 
