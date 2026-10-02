@@ -114,59 +114,52 @@ def parse_fattura_xml(xml_path):
 
 
 def salva_fattura_in_db(azienda_id, fattura_data):
-    """Salva la fattura e le sue scadenze nel database PostgreSQL con RLS attivo"""
+    """Salva la fattura e le sue scadenze nel database PostgreSQL usando la tabella fornitori"""
     conn = get_db_connection(azienda_id)
     cur = conn.cursor()
 
     try:
-        # A. Inserisci o recupera il Fornitore
+        # A. Inserisci o recupera il Fornitore dalla tabella 'fornitori'
         cur.execute("""
-            INSERT INTO soggetti_commerciali (azienda_id, denominazione, partita_iva, tipo_soggetto)
-            VALUES (%s, %s, %s, 'fornitore')
-            ON CONFLICT DO NOTHING
-            RETURNING id;
+            INSERT INTO fornitori (azienda_id, ragione_sociale, partita_iva)
+            VALUES (%s, %s, %s)
+            ON CONFLICT DO NOTHING;
         """, (azienda_id, fattura_data["denominazione_fornitore"], fattura_data["piva_fornitore"]))
 
-        soggetto_res = cur.fetchone()
-        if soggetto_res:
-            soggetto_id = soggetto_res[0]
-        else:
-            cur.execute("SELECT id FROM soggetti_commerciali WHERE partita_iva = %s AND azienda_id = %s;",
-                        (fattura_data["piva_fornitore"], azienda_id))
-            soggetto_id = cur.fetchone()[0]
+        # Recuperiamo l'ID del fornitore
+        cur.execute("SELECT id FROM fornitori WHERE partita_iva = %s AND azienda_id = %s;",
+                    (fattura_data["piva_fornitore"], azienda_id))
+        fornitore_res = cur.fetchone()
+        fornitore_id = fornitore_res[0] if fornitore_res else None
 
-        # B. Inserisci la Fattura B2B
+        # B. Inserisci la Fattura B2B nella tabella 'fatture_b2b'
         cur.execute("""
-            INSERT INTO fatture_b2b (azienda_id, soggetto_id, tipo_documento, direzione, numero_documento, data_documento, importo_imponibile, importo_iva, importo_totale)
-            VALUES (%s, %s, 'TD01', 'passiva', %s, %s, %s, %s, %s)
+            INSERT INTO fatture_b2b (azienda_id, fornitore_id, numero_documento, data_emissione, importo_totale)
+            VALUES (%s, %s, %s, %s, %s)
             RETURNING id;
         """, (
             azienda_id,
-            soggetto_id,
+            fornitore_id,
             fattura_data["numero_documento"],
             fattura_data["data_documento"],
-            fattura_data["importo_imponibile"],
-            fattura_data["importo_iva"],
             fattura_data["importo_totale"]
         ))
         fattura_id = cur.fetchone()[0]
 
-        # C. Inserisci le Scadenze
-        for idx, scad in enumerate(fattura_data["scadenze"], start=1):
+        # C. Inserisci le Scadenze nella tabella 'scadenze_b2b'
+        for scad in fattura_data["scadenze"]:
             cur.execute("""
-                INSERT INTO scadenze_b2b (fattura_id, numero_rata, data_scadenza, importo_rata, modalita_pagamento, stato_pagamento)
-                VALUES (%s, %s, %s, %s, %s, 'da_pagare');
+                INSERT INTO scadenze_b2b (fattura_id, data_scadenza, importo_rata, stato_pagamento)
+                VALUES (%s, %s, %s, 'da_pagare');
             """, (
                 fattura_id,
-                idx,
                 scad["data_scadenza"],
-                scad["importo_rata"],
-                scad["modalita_pagamento"]
+                scad["importo_rata"]
             ))
 
         conn.commit()
         print(
-            f"✅ Fattura N. {fattura_data['numero_documento']} di '{fattura_data['denominazione_fornitore']}' (Totale: {fattura_data['importo_totale']} €) salvata in modo sicuro nel DB!")
+            f"✅ Fattura N. {fattura_data['numero_documento']} di '{fattura_data['denominazione_fornitore']}' (Totale: {fattura_data['importo_totale']} €) salvata e scadenze generate con successo!")
 
     except Exception as e:
         conn.rollback()
@@ -178,7 +171,7 @@ def salva_fattura_in_db(azienda_id, fattura_data):
 
 if __name__ == "__main__":
     AZIENDA_ID = os.getenv("AZIENDA_ID")
-    percorso_file_xml = "fattura_prova.xml"
+    percorso_file_xml = "inbox_xml/fattura_prova.xml"
 
     print("📄 Analisi file XML in corso...")
     try:

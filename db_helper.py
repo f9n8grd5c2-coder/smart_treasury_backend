@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from cryptography.fernet import Fernet
 
 # Carica le variabili di ambiente dal file .env
-load_dotenv()
+load_dotenv(override=True)
 
 # Inizializza la cifra Fernet (AES-256) se presente la chiave
 ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
